@@ -1,0 +1,33 @@
+[workspace]
+resolver = "2"
+members = ["crates/*", "examples/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/patmuk/setzer"
+
+[workspace.dependencies]
+setzer = { path = "crates/setzer", version = "0.1.0" }
+setzer-core = { path = "crates/setzer-core", version = "0.1.0" }
+setzer-design = { path = "crates/setzer-design", version = "0.1.0" }
+setzer-components = { path = "crates/setzer-components", version = "0.1.0" }
+setzer-macros = { path = "crates/setzer-macros", version = "0.1.0" }
+maud = "0.27"
+anyhow = "1"
+linkme = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"
+chrono = "0.4"
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
+walkdir = "2"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+sha2 = "0.10"
+base64 = "0.22"
+regex = "1"
+syn = { version = "2", features = ["full"] }
+quote = "1"
+image-dims = { package = "image", version = "0.25", default-features = false, features = ["jpeg", "png"] }
+proc-macro2 = "1"
