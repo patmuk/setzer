@@ -1,0 +1,13 @@
+[package]
+name = "setzer-components"
+description = "Components for Setzer sites: standard frame, hero, cards, timeline, lists. Markup and typed CSS side by side."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+setzer-core.workspace = true
+setzer-design.workspace = true
+maud.workspace = true
+serde_json.workspace = true

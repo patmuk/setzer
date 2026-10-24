@@ -1,0 +1,10 @@
+[package]
+name = "setzer-theme-slate"
+description = "Slate theme for Setzer: cool blue-grey, light and dark."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+setzer-design.workspace = true

@@ -1,0 +1,11 @@
+[package]
+name = "setzer-design"
+description = "Setzer design system: typed tokens, themes, a typed CSS builder and a literal lint."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+regex.workspace = true
+maud.workspace = true
