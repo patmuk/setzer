@@ -156,7 +156,8 @@ impl Site {
     /// Fails, writing nothing, if a link points to a page or section that
     /// does not exist.
     pub fn write(self) -> Result<()> {
-        let out = cli::out_dir()?;
+        let options = cli::options()?;
+        let out = options.out.clone();
         let entries = self.entries()?;
         record::start();
         render::STATE.with(|s| *s.borrow_mut() = Default::default());
@@ -376,7 +377,26 @@ impl Site {
                 crate::script::cloudflare_headers(state.script).as_bytes(),
             )?;
         }
-        Ok(())
+
+        let shown = std::env::current_dir()
+            .ok()
+            .and_then(|cwd| out.strip_prefix(cwd).ok().map(Path::to_path_buf))
+            .unwrap_or_else(|| out.clone());
+        let count =
+            |n: usize, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
+        println!(
+            "setzer: wrote {} in {} to {}",
+            count(pages.len(), "page", "pages"),
+            count(self.langs.len(), "language", "languages"),
+            shown.display()
+        );
+        match options.serve {
+            Some(port) => crate::serve::run(&out, port),
+            None => {
+                println!("        preview: cargo run -- --serve");
+                Ok(())
+            }
+        }
     }
 }
 

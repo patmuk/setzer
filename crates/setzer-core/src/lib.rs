@@ -11,6 +11,7 @@ pub mod lang;
 pub mod page;
 pub mod render;
 pub mod script;
+mod serve;
 pub mod site;
 pub mod xml;
 

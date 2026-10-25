@@ -244,7 +244,43 @@ the `<head>`, header and footer.
 
 ## How it works: compile, then run
 
-`cargo run` does two things, and Setzer uses both.
+A Setzer site is an ordinary Rust program, so you build and preview it with cargo:
+
+| Command | What it does |
+|---|---|
+| `cargo run` | compiles the site and writes it to `target/site/` |
+| `cargo run -- --serve` | the same, then serves it at <http://127.0.0.1:1111/> until Ctrl-C |
+| `cargo run -- --serve 8080` | the same on another port |
+| `cargo watch -x "run -- --serve"` | rebuilds on every change, and the open pages reload themselves |
+| `cargo run --release -- --out dist` | an optimised build into another folder, e.g. for publishing |
+
+Every run ends with a summary and a hint:
+
+```
+setzer: wrote 39 pages in 2 languages to target/site
+        preview: cargo run -- --serve
+```
+
+With `--serve` it prints the link to open instead:
+
+```
+setzer: wrote 39 pages in 2 languages to target/site
+setzer: serving http://127.0.0.1:1111/  (Ctrl-C to stop; pages reload on rebuild)
+```
+
+The server is built in and needs nothing else installed. It behaves like the static host will:
+`/blog/` serves `blog/index.html`, `/blog` redirects to `/blog/`, and an unknown address gets
+the closest `404.html`, so `/de/nope` shows the German 404 page. It only listens on your own
+machine.
+
+**Live reload.** The pages the server sends contain a small script; the files in `target/site/`
+stay script-free. The script keeps a connection open to the server. When `cargo watch` restarts
+the server after a change, the script reconnects, sees the new build and reloads the page. So:
+save a file, and the browser shows the result a moment later. `cargo watch` comes from `cargo install cargo-watch`. (Opening `target/site/index.html`
+straight from disk doesn't work well, because links like `/blog/` point at the root of a
+server, not at a folder on disk.)
+
+What happens inside `cargo run`:
 
 1. **Compile.** `site!()` reads `src/www/` and turns it into typed Rust:
    - each page folder's Markdown files become structs (`content.md` → `struct Content`);
