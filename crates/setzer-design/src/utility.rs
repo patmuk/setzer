@@ -19,6 +19,9 @@ pub enum Variant {
     Hover,
     /// `:first-child`
     First,
+    /// In dark mode: the system's, unless the visitor picked light, or
+    /// theirs from the theme toggle.
+    Dark,
     /// At and below a breakpoint.
     At(Breakpoint),
 }
@@ -65,6 +68,7 @@ impl Utility {
             Variant::Always => self.class.clone(),
             Variant::Hover => format!("hover:{}", self.class),
             Variant::First => format!("first:{}", self.class),
+            Variant::Dark => format!("dark:{}", self.class),
             Variant::At(b) => format!("{}:{}", b.slug(), self.class),
         }
     }
@@ -88,6 +92,11 @@ impl Utility {
             Variant::Always => format!("{selector} {{ {} }}\n", self.decls),
             Variant::Hover => format!("{selector}:hover {{ {} }}\n", self.decls),
             Variant::First => format!("{selector}:first-child {{ {} }}\n", self.decls),
+            Variant::Dark => format!(
+                "@media (prefers-color-scheme: dark) {{ :root:not([data-theme=\"light\"]) {selector} {{ {d} }} }}\n\
+                 :root[data-theme=\"dark\"] {selector} {{ {d} }}\n",
+                d = self.decls
+            ),
             Variant::At(b) => format!("{b} {{ {selector} {{ {} }} }}\n", self.decls),
         }
     }
@@ -118,6 +127,12 @@ pub fn hover(mut u: Utility) -> Utility {
 }
 pub fn first(mut u: Utility) -> Utility {
     u.variant = Variant::First;
+    u
+}
+/// Applies in dark mode, following the theme toggle like the colours do;
+/// e.g. a logo drawn for dark backgrounds: `[hidden(), dark(block())]`.
+pub fn dark(mut u: Utility) -> Utility {
+    u.variant = Variant::Dark;
     u
 }
 /// Applies at and below `b` (desktop first).
@@ -606,5 +621,10 @@ mod tests {
             ".hover\\:border-accent:hover { border-color: var(--color-accent) }\n"
         );
         assert_eq!(raw("object-fit", "cover").class(), "object-fit-cover");
+        assert_eq!(
+            dark(hidden()).rule(),
+            "@media (prefers-color-scheme: dark) { :root:not([data-theme=\"light\"]) .dark\\:hidden { display: none } }\n\
+             :root[data-theme=\"dark\"] .dark\\:hidden { display: none }\n"
+        );
     }
 }

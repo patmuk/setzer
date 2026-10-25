@@ -110,26 +110,28 @@ pub mod record {
 
     impl Recorded {
         /// In cascade order, like Tailwind's layers: named classes
-        /// (components), then utilities, hover and first-child variants,
-        /// then breakpoints from wide to narrow.
+        /// (components), then utilities, hover, first-child and dark
+        /// variants, then breakpoints from wide to narrow.
         pub fn css(&self) -> String {
             let mut out = String::new();
             for css in self.named.values() {
                 out.push_str(css);
             }
-            for v in [Variant::Always, Variant::Hover, Variant::First] {
-                for ((variant, _), u) in &self.utilities {
-                    if *variant == v {
-                        out.push_str(&u.rule());
-                    }
+            for v in [
+                Variant::Always,
+                Variant::Hover,
+                Variant::First,
+                Variant::Dark,
+            ] {
+                for u in self.in_cascade_order(v) {
+                    out.push_str(&u.rule());
                 }
             }
             for bp in [Breakpoint::Narrow, Breakpoint::Phone] {
                 let rules: Vec<String> = self
-                    .utilities
-                    .iter()
-                    .filter(|((v, _), _)| *v == Variant::At(bp))
-                    .map(|(_, u)| {
+                    .in_cascade_order(Variant::At(bp))
+                    .into_iter()
+                    .map(|u| {
                         let rule = u.rule();
                         // strip the per-rule @media wrapper; one block per breakpoint
                         let inner = rule
@@ -144,6 +146,19 @@ pub mod record {
                 }
             }
             out
+        }
+
+        /// Shorthands before longhands (`font` before `font-family`), so
+        /// `[text(TextRole::H2), font(Font::Body)]` keeps the body font.
+        fn in_cascade_order(&self, v: Variant) -> Vec<&Utility> {
+            let mut us: Vec<&Utility> = self
+                .utilities
+                .iter()
+                .filter(|((variant, _), _)| *variant == v)
+                .map(|(_, u)| u)
+                .collect();
+            us.sort_by_key(|u| u.group.matches('-').count());
+            us
         }
     }
 }
@@ -170,5 +185,13 @@ mod tests {
         let css = record::finish().css();
         assert_eq!(css.matches(".p-m {").count(), 1);
         assert!(css.contains("@media (max-width: 48rem) {\n  .narrow\\:cols-1 { grid-template-columns: repeat(1, 1fr) }\n}"));
+    }
+
+    #[test]
+    fn longhand_overrides_shorthand() {
+        record::start();
+        let _ = style([font(Font::Body), text(TextRole::H2)]).render();
+        let css = record::finish().css();
+        assert!(css.find(".text-h2 {").unwrap() < css.find(".font-body {").unwrap());
     }
 }

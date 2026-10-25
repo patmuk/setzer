@@ -27,6 +27,8 @@ pub struct FrameParts {
     pub favicon: String,
     /// Image before the site name in the header (e.g. `/logo.svg`); the name stays as text.
     pub logo: Option<String>,
+    /// The logo for dark mode, if it needs other colours (`None`: `logo` in both).
+    pub logo_dark: Option<String>,
     /// Description for pages that have none.
     pub description: String,
     /// Open Graph share image (root-relative or absolute).
@@ -77,7 +79,14 @@ pub fn standard_frame(page: &Frame, parts: &FrameParts, body: Html) -> Html {
                 header class=(style([sticky_top(), layer(5), bg(Color::HeaderBg), blur(Size::Blur), border_bottom(Stroke::Hairline, Color::Rule)])) {
                     div class=(wrap().with(style([flex(), flex_wrap(), items_center(), justify_between(), gap_xy(Space::Xs, Space::M), pad_y(Space::Sm)]))) {
                         a href=(parts.home) class=(style([class("brand"), flex(), items_center(), gap(Space::S), weight(700), fg(Color::Fg)])) {
-                            @if let Some(logo) = &parts.logo { img src=(logo) alt="" height="32" class=(style([height(Space::Xl), raw("width", "auto")])); }
+                            @if let Some(logo) = &parts.logo {
+                                @if let Some(logo_dark) = &parts.logo_dark {
+                                    img src=(logo) alt="" height="32" class=(style([height(Space::Xl), raw("width", "auto"), dark(hidden())]));
+                                    img src=(logo_dark) alt="" height="32" class=(style([height(Space::Xl), raw("width", "auto"), hidden(), dark(block())]));
+                                } @else {
+                                    img src=(logo) alt="" height="32" class=(style([height(Space::Xl), raw("width", "auto")]));
+                                }
+                            }
                             span { (name) }
                         }
                         nav aria-label="Main" class=(style([flex(), flex_wrap(), items_center(), gap_xy(Space::Tight, Space::M), text(TextRole::BodySm)])) {

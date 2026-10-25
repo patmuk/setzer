@@ -649,6 +649,7 @@ pub fn frame(page: &Frame, body: Html) -> Html {
         skip: "Skip to content".into(),
         favicon: "/favicon.svg".into(),
         logo: Some("/logo.svg".into()),                     // shown before the site name; None for text only
+        logo_dark: None,                                    // Some("/logo-dark.svg".into()) if dark mode needs other colours
         description: "Websites built with Setzer.".into(), // for pages without a description
         og_image: Some("/og.png".into()),                   // preview image when the link is shared
         footer: html! { p { "© 2026 Example" } },
@@ -716,7 +717,7 @@ Styling follows the same model as Tailwind v4, with types:
 | Design tokens | `@theme { --color-accent: … }` | `Theme`: a Rust struct with defaults, emitted as CSS variables |
 | Per project | override the theme | `Theme { light, dark, ..Theme::default() }`, or a theme crate |
 | On elements | `class="p-4 bg-accent"` | `class=(style([pad(Space::M), bg(Color::Accent)]))` |
-| Variants | `hover:` `md:` | `hover(…)`, `at(Breakpoint::Narrow, …)`, `first(…)` |
+| Variants | `hover:` `md:` `dark:` | `hover(…)`, `at(Breakpoint::Narrow, …)`, `first(…)`, `dark(…)` |
 | Override a component | pass more classes (and `tailwind-merge`) | `Style::with`: same property and variant, later wins |
 | Global rules | `@layer base { button { … } }` | `.css(rule("button", [bg(Color::Accent)]))` in `main` |
 | Generated CSS | only classes found in sources | only utilities rendered by pages |
@@ -833,7 +834,8 @@ Things to know:
   take a struct of their own, like the built-in `cards(&[Card])`, or just a `&str`.
 - **The styling is checked.** Spacing, colours, radii and type sizes come from the theme, so a
   tile can't use a colour the theme doesn't have. `at(Breakpoint::Phone, …)` is the responsive
-  variant, `hover(…)` the hover state. Only the rules that actually render reach the stylesheet,
+  variant, `hover(…)` the hover state, `dark(…)` dark mode (it follows the theme toggle like the
+  colours do). Only the rules that actually render reach the stylesheet,
   so a component that no page uses costs nothing.
 - **Put it where it is used.** A component for one page can sit in that page's `mod.rs`, like
   `word()` in hello-world. Shared ones go in a module such as `src/components.rs`, and ones worth
