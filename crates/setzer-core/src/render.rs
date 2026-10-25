@@ -22,7 +22,8 @@ pub(crate) struct State {
     /// (target path, anchor, linked from)
     pub links: Vec<(String, Option<String>, String)>,
     pub images: Vec<&'static ImageRef>,
-    pub script: bool,
+    /// Inline scripts the pages used; their hashes go into the CSP.
+    pub scripts: std::collections::BTreeSet<&'static str>,
 }
 
 thread_local! {
@@ -100,6 +101,14 @@ pub fn stylesheet() -> Markup {
 /// The light/dark script (Auto → Light → Dark toggle). Using it adds its
 /// hash to the Content-Security-Policy; sites without it run no script.
 pub fn theme_script() -> Markup {
-    STATE.with(|s| s.borrow_mut().script = true);
-    html! { script { (PreEscaped(SCRIPT)) } }
+    script(SCRIPT)
+}
+
+/// An inline `<script>`, for the rare page that needs one. Its hash goes into
+/// the Content-Security-Policy, so exactly these scripts run and no others.
+/// Write the code into the page (e.g. `script(include_str!("open.js"))`), not
+/// text from outside.
+pub fn script(js: &'static str) -> Markup {
+    STATE.with(|s| s.borrow_mut().scripts.insert(js));
+    html! { script { (PreEscaped(js)) } }
 }

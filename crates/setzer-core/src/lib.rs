@@ -22,7 +22,7 @@ pub use image::ImageRef;
 pub use lang::Lang;
 pub use maud::{html, Markup, PreEscaped, Render, DOCTYPE};
 pub use page::{ContentMeta, Feed, FeedItem, Meta, PageDef, RenderFn};
-pub use render::{anchor, href, stylesheet, theme_script};
+pub use render::{anchor, href, script, stylesheet, theme_script};
 pub use site::Site;
 
 /// Every page of the program. Each `setzer::page!` adds its `PAGE` here

@@ -19,7 +19,7 @@ pub mod utility;
 
 pub use css::{rule, Css};
 pub use style::{style, Style};
-pub use theme::{Colors, Theme};
+pub use theme::{Colors, Fonts, TextStyle, Theme, SYSTEM_MONO, SYSTEM_SANS};
 pub use tokens::*;
 pub use utility::Utility;
 

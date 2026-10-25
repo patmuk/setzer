@@ -10,6 +10,7 @@ pub mod hero;
 pub mod layout;
 pub mod lists;
 pub mod media;
+pub mod showcase;
 
 pub use button::{button, Look};
 pub use frame::{standard_frame, FrameParts, NavItem, ThemeLabels};
@@ -20,6 +21,7 @@ pub use lists::{
     titled_list, translations, Card, ContactRow, Period, Term,
 };
 pub use media::{picture, prose, themed_picture};
+pub use showcase::{features, intro, Feature, Intro};
 
 #[cfg(test)]
 mod lint {

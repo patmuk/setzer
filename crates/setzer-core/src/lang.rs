@@ -5,10 +5,12 @@ pub enum Lang {
     De,
     Fr,
     It,
+    /// Swiss German (Schwiizerdütsch).
+    Gsw,
 }
 
 impl Lang {
-    pub const ALL: [Lang; 4] = [Lang::En, Lang::De, Lang::Fr, Lang::It];
+    pub const ALL: [Lang; 5] = [Lang::En, Lang::De, Lang::Fr, Lang::It, Lang::Gsw];
 
     /// BCP 47 code, also the URL prefix for non-default languages.
     pub fn code(self) -> &'static str {
@@ -17,6 +19,7 @@ impl Lang {
             Lang::De => "de",
             Lang::Fr => "fr",
             Lang::It => "it",
+            Lang::Gsw => "gsw",
         }
     }
 
@@ -27,6 +30,7 @@ impl Lang {
             Lang::De => "de_CH",
             Lang::Fr => "fr_CH",
             Lang::It => "it_CH",
+            Lang::Gsw => "de_CH", // Open Graph has no Swiss German
         }
     }
 
@@ -37,6 +41,7 @@ impl Lang {
             Lang::De => "Deutsch",
             Lang::Fr => "Français",
             Lang::It => "Italiano",
+            Lang::Gsw => "Schwiizerdütsch",
         }
     }
 

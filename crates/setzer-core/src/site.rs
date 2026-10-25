@@ -26,6 +26,7 @@ pub struct Site {
     statics: Vec<&'static [StaticFile]>,
     files: Vec<(String, String)>,
     headers: bool,
+    header_rules: Vec<(String, String, String)>,
     orphans_fail: bool,
 }
 
@@ -55,6 +56,7 @@ impl Site {
             statics: Vec::new(),
             files: Vec::new(),
             headers: true,
+            header_rules: Vec::new(),
             orphans_fail: false,
         }
     }
@@ -94,6 +96,14 @@ impl Site {
     /// warning.
     pub fn orphans_fail(mut self) -> Site {
         self.orphans_fail = true;
+        self
+    }
+
+    /// An extra rule for Cloudflare's `_headers` file, e.g.
+    /// `.header("/.well-known/apple-app-site-association", "Content-Type", "application/json")`.
+    pub fn header(mut self, path: &str, name: &str, value: &str) -> Site {
+        self.header_rules
+            .push((path.to_string(), name.to_string(), value.to_string()));
         self
     }
 
@@ -374,7 +384,11 @@ impl Site {
             write_file(
                 &out,
                 "/_headers",
-                crate::script::cloudflare_headers(state.script).as_bytes(),
+                crate::script::cloudflare_headers(
+                    state.scripts.iter().copied(),
+                    &self.header_rules,
+                )
+                .as_bytes(),
             )?;
         }
 

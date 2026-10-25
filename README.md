@@ -80,8 +80,9 @@ show up in the editor while you type, not in production:
 | page that no link reaches | warning, or an error with `.orphans_fail()` |
 
 **Small, safe output.** Plain HTML, one CSS file with only the rules your pages render, images in
-the sizes you use, and no JavaScript unless you ask for the theme toggle. Setzer writes a
-Content-Security-Policy to match, so a site without the toggle allows no script at all.
+the sizes you use, and no JavaScript unless you ask for it: the theme toggle, or a page script
+via `setzer::script(…)`. Setzer writes a Content-Security-Policy to match that lets exactly those
+scripts run, so a site without any allows no script at all.
 
 **Your app's Rust can run on your product page.** If your product has a Rust core, you can compile
 it to WebAssembly and mount it in a component, so the live demo runs the same code as the app.
@@ -135,7 +136,16 @@ Compared with Astro, Zola, Hugo or Eleventy:
 
 ## Crates
 
-A site depends on `setzer` and on `maud` (maud's `html!` refers to its own crate by name).
+A site depends on `setzer` and on `maud` (maud's `html!` refers to its own crate by name):
+
+```toml
+[dependencies]
+setzer = { git = "https://github.com/patmuk/setzer" }
+setzer-theme-slate = { git = "https://github.com/patmuk/setzer" }  # optional: a ready theme
+maud = "0.27"
+```
+
+`Cargo.lock` pins the exact Setzer commit; `cargo update -p setzer` moves to the newest one.
 
 | Crate | Contents |
 |---|---|
@@ -377,7 +387,9 @@ src/www/apps/ringio/faq.md: content.md is this page's text; for faq.md add faq.r
 
 `site!()` turns the text into `struct Content` and `fn content(lang) -> &'static Content`.
 Front-matter keys become `&'static str` fields, and the Markdown below the front matter becomes
-`body`, which renders as HTML. The file without a language suffix is the fallback. Every
+`body`, which renders as HTML. The file without a language suffix is the fallback. The
+languages are `en`, `de`, `fr`, `it` and `gsw` (Swiss German, which falls back to `de` before the
+fallback). Every
 `name.<lang>.md` must have the same keys as its fallback, or the build fails with an error like
 this one:
 
@@ -636,6 +648,7 @@ pub fn frame(page: &Frame, body: Html) -> Html {
         ],
         skip: "Skip to content".into(),
         favicon: "/favicon.svg".into(),
+        logo: Some("/logo.svg".into()),                     // shown before the site name; None for text only
         description: "Websites built with Setzer.".into(), // for pages without a description
         og_image: Some("/og.png".into()),                   // preview image when the link is shared
         footer: html! { p { "© 2026 Example" } },
@@ -649,7 +662,7 @@ This gives every page:
 
 - a `<head>` with title (`Blog · Example`), description, canonical URL, `hreflang` alternates,
   the RSS link, Open Graph tags for link previews, the favicon and the stylesheet;
-- a sticky header with the site name, the navigation, the language switch
+- a sticky header with the logo and site name, the navigation, the language switch
   (`English · Deutsch`) and the Auto/Light/Dark toggle (with `theme: None` the site follows the
   system setting and ships no script at all);
 - a skip link for keyboard users, the page in `<main>`, and your footer.
@@ -721,9 +734,35 @@ The tokens are `Space` (an 8pt grid by default, `SpaceScale::grid(8.0)`, and con
 its websites can share one source of truth. A raw keyword property can be set with
 `raw("object-fit", "cover")`, and the run fails if a length or colour sneaks in there.
 
+Web fonts are files of the site (e.g. in `static/fonts/`), declared once and named in the theme:
+
+```rust
+Site::new(…)
+    .theme(Theme { fonts: Fonts { heading: "\"Fraunces\", Georgia, serif", ..Fonts::default() }, ..Theme::default() })
+    .css(Css::font_face("Fraunces", "/fonts/fraunces.woff2", "100 900", false))
+```
+
+The generated Content-Security-Policy allows fonts from the site itself only, so there are no
+requests to font services.
+
 Light and dark follow the system setting. `theme_script()` adds a toggle that cycles through
 Auto, Light and Dark. It is about 700 bytes and stores the choice in `localStorage`. Its hash goes
 into the generated Content-Security-Policy.
+
+A page that needs a script of its own includes it with `setzer::script`:
+
+```rust
+html! {
+    a #open href="#" class=(Look::Primary.style()) { "Open in the app" }
+    (setzer::script(include_str!("open.js")))   // open.js next to the page's mod.rs
+}
+```
+
+Its hash joins the Content-Security-Policy, so exactly the scripts your pages use can run. Extra
+rules for the `_headers` file come from `main`, for example
+`.header("/.well-known/apple-app-site-association", "Content-Type", "application/json")`.
+Files in `static/` are copied as they are, `.well-known/` and Cloudflare's `_redirects`
+included.
 
 ## Components
 
@@ -733,7 +772,8 @@ registry and no plugin system. A function takes whatever data it needs and style
 
 ### Built-in components
 
-`setzer::components` comes with `standard_frame`, `button`, `hero`, `facts`, `cards`, `terms`,
+`setzer::components` comes with `standard_frame`, `button`, `hero`, `facts`, `intro` (text beside
+a picture), `features` (rows that alternate sides, for product pages), `cards`, `terms`,
 `titled_list`, `timeline`, `doc_list`, `doc_teasers`, `translations`, `contact`, `meta_line`,
 `notice`, `accordion`, `picture`, `themed_picture`, `prose` and a few layout presets
 (`section`, `narrow_section`, `split`, `two_col`). They live in
@@ -807,8 +847,8 @@ Things to know:
 
 A widget crate with `crate-type = ["cdylib"]` and `wasm-bindgen` builds to a few kilobytes. To
 embed it, copy the `.wasm` file and its glue code via `static_dir!`, emit a mount point and a
-`<script type="module">` loader from a component, and add the loader's hash to the CSP. Setzer
-doesn't do this for you yet. Use WASM where it is faster than JavaScript, and nowhere else.
+`<script type="module">` loader from a component with `setzer::script`, which adds its hash to
+the CSP. Setzer doesn't build the WASM for you yet. Use WASM where it is faster than JavaScript, and nowhere else.
 
 ## Deploy
 
@@ -829,9 +869,9 @@ Cloudflare picks up the generated `_headers` file automatically.
 
 ## Status
 
-Setzer is early. It was built for [patrick.mukherjee.ch](https://patrick.mukherjee.ch), more
-sites are planned, and the API will change. Contributions are welcome if they keep to the rules:
-no template language, no framework JavaScript, no literal values in a style, and nothing hidden
+Setzer is early. It was built for [patrick.mukherjee.de](https://patrick.mukherjee.de) and more
+of my sites, and the API might change. Contributions are welcome if they keep to the rules:
+No template language, no framework JavaScript, no literal values in a style, and nothing hidden.
 that can't be explained in one sentence.
 
 ## License

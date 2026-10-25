@@ -487,6 +487,13 @@ pub fn flex_wrap() -> Utility {
 pub fn items_center() -> Utility {
     Utility::new("align-items", "items-center", "align-items: center")
 }
+/// Moves a flex or grid item after its siblings.
+pub fn order_last() -> Utility {
+    Utility::new("order", "order-last", "order: 1")
+}
+pub fn items_start() -> Utility {
+    Utility::new("align-items", "items-start", "align-items: start")
+}
 pub fn justify_between() -> Utility {
     Utility::new(
         "justify-content",
@@ -532,6 +539,13 @@ pub fn columns_capped_first(max: impl Length) -> Utility {
     )
 }
 /// Flexible first column, the last sized by its content.
+pub fn columns_content_first() -> Utility {
+    Utility::new(
+        "grid-template-columns",
+        "cols-content-first",
+        "grid-template-columns: auto minmax(0, 1fr)",
+    )
+}
 pub fn columns_content_last() -> Utility {
     Utility::new(
         "grid-template-columns",
