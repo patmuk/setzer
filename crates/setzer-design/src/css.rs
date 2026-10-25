@@ -70,6 +70,16 @@ impl Css {
         self
     }
 
+    /// A self-hosted web font: `font_face("Fraunces", "/fonts/fraunces.woff2", "100 900", false)`.
+    /// `url` is a file of the site (e.g. in `static/`); `weight` a weight or a
+    /// variable font's range. Name the family in the theme's `Fonts`.
+    pub fn font_face(family: &str, url: &str, weight: &str, italic: bool) -> Css {
+        let style = if italic { "italic" } else { "normal" };
+        Css::raw(format!(
+            "@font-face{{font-family:\"{family}\";src:url(\"{url}\") format(\"woff2\");font-weight:{weight};font-style:{style};font-display:swap}}"
+        ))
+    }
+
     /// Verbatim CSS, for the theme's token block.
     pub fn raw(text: impl Into<String>) -> Css {
         Css(vec![Item::Raw(text.into())])

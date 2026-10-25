@@ -507,6 +507,12 @@ fn content_items(
             arms.push(quote!(#variant => &#name,));
         }
     }
+    // Swiss German without its own file reads the German one.
+    let has_lang = |code: &str| parsed.iter().any(|(l, _, _)| l.as_deref() == Some(code));
+    if has_lang("de") && !has_lang("gsw") {
+        let de = format_ident!("{prefix}_DE");
+        arms.push(quote!(::setzer::Lang::Gsw => &#de,));
+    }
     let default = format_ident!("{prefix}_DEFAULT");
     let includes = files.iter().map(|(_, p)| include(p));
     let has =
@@ -566,9 +572,10 @@ fn lang_variant(code: &str) -> R<Ts> {
         "de" => quote!(::setzer::Lang::De),
         "fr" => quote!(::setzer::Lang::Fr),
         "it" => quote!(::setzer::Lang::It),
+        "gsw" => quote!(::setzer::Lang::Gsw),
         other => {
             return Err(format!(
-                "unknown language suffix .{other}.md (known: en, de, fr, it)"
+                "unknown language suffix .{other}.md (known: en, de, fr, it, gsw)"
             ))
         }
     })
@@ -826,7 +833,7 @@ pub fn static_dir(input: TokenStream) -> TokenStream {
         let mut files = Vec::new();
         for entry in walkdir::WalkDir::new(&root).sort_by_file_name() {
             let entry = entry.map_err(|e| format!("static_dir!: {e}"))?;
-            if !entry.file_type().is_file() {
+            if !entry.file_type().is_file() || entry.file_name() == ".DS_Store" {
                 continue;
             }
             let rel = entry
