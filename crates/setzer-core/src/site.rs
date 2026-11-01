@@ -6,11 +6,11 @@ use crate::lang::Lang;
 use crate::page::{PageDef, RenderFn};
 use crate::render::{self, STYLESHEET_PLACEHOLDER};
 use crate::{cli, config, xml};
-use anyhow::{bail, Context as _, Result};
+use anyhow::{Context as _, Result, bail};
 use base64::Engine;
 use maud::Markup;
 use setzer_design::style::record;
-use setzer_design::{base, emit, lint, Css, Theme};
+use setzer_design::{Css, Theme, base, emit, lint};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -149,7 +149,9 @@ impl Site {
     fn entries(&self) -> Result<Vec<Entry>> {
         let mut defs: Vec<&'static PageDef> = crate::PAGES.iter().copied().collect();
         if defs.is_empty() {
-            bail!("no pages: call `setzer::site!()` in main.rs and `setzer::page!()` in src/www/mod.rs");
+            bail!(
+                "no pages: call `setzer::site!()` in main.rs and `setzer::page!()` in src/www/mod.rs"
+            );
         }
         defs.sort_by_key(|d| d.module);
         let mut entries = Vec::new();
@@ -298,10 +300,10 @@ impl Site {
                     "{from} links to {target}, which is not a page of this site"
                 )),
                 Some((_, html)) => {
-                    if let Some(id) = anchor {
-                        if !html.contains(&format!("id=\"{id}\"")) {
-                            problems.push(format!("{from} links to {target}#{id}, but that page has no element with id=\"{id}\""));
-                        }
+                    if let Some(id) = anchor
+                        && !html.contains(&format!("id=\"{id}\""))
+                    {
+                        problems.push(format!("{from} links to {target}#{id}, but that page has no element with id=\"{id}\""));
                     }
                 }
             }

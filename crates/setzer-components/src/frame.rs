@@ -3,7 +3,7 @@
 //! function: `fn frame(page: &Frame, body: Html) -> Html { standard_frame(page, &parts(page.lang), body) }`.
 
 use crate::layout::wrap;
-use setzer_core::{each, html, site_name, stylesheet, theme_script, Frame, Html, DOCTYPE};
+use setzer_core::{DOCTYPE, Frame, Html, each, html, site_name, stylesheet, theme_script};
 use setzer_design::prelude::*;
 
 pub struct NavItem {

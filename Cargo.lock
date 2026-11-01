@@ -224,7 +224,7 @@ checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
 
 [[package]]
 name = "hello-world"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "maud",
  "setzer",
@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "setzer"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "setzer-components",
@@ -582,7 +582,7 @@ dependencies = [
 
 [[package]]
 name = "setzer-components"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "maud",
  "serde_json",
@@ -592,7 +592,7 @@ dependencies = [
 
 [[package]]
 name = "setzer-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -607,7 +607,7 @@ dependencies = [
 
 [[package]]
 name = "setzer-design"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "maud",
  "regex",
@@ -615,7 +615,7 @@ dependencies = [
 
 [[package]]
 name = "setzer-macros"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "image",
  "proc-macro2",
@@ -629,7 +629,7 @@ dependencies = [
 
 [[package]]
 name = "setzer-theme-slate"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "setzer-design",
 ]

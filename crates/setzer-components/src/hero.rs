@@ -1,6 +1,6 @@
-use crate::button::{button, Look};
+use crate::button::{Look, button};
 use crate::layout::wrap;
-use setzer_core::{each, html, Html, ImageRef};
+use setzer_core::{Html, ImageRef, each, html};
 use setzer_design::prelude::*;
 
 pub struct Link<'a> {

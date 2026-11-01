@@ -17,16 +17,16 @@ pub mod theme;
 pub mod tokens;
 pub mod utility;
 
-pub use css::{rule, Css};
-pub use style::{style, Style};
-pub use theme::{Colors, Fonts, TextStyle, Theme, SYSTEM_MONO, SYSTEM_SANS};
+pub use css::{Css, rule};
+pub use style::{Style, style};
+pub use theme::{Colors, Fonts, SYSTEM_MONO, SYSTEM_SANS, TextStyle, Theme};
 pub use tokens::*;
 pub use utility::Utility;
 
 /// Tokens, utilities, `style` and `rule`: what a component needs.
 pub mod prelude {
-    pub use crate::css::{rule, Css};
-    pub use crate::style::{style, Style};
+    pub use crate::css::{Css, rule};
+    pub use crate::style::{Style, style};
     pub use crate::tokens::*;
     pub use crate::utility::*;
 }

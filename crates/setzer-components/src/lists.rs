@@ -1,4 +1,4 @@
-use setzer_core::{each, html, Doc, Html};
+use setzer_core::{Doc, Html, each, html};
 use setzer_design::prelude::*;
 
 pub struct Card<'a> {

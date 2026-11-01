@@ -3,6 +3,7 @@ name = "setzer"
 description = "Setzer: static sites as Rust programs. Pages are modules, content is markdown compiled into typed structs, styling is a typed utility system."
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 readme = "../../README.md"

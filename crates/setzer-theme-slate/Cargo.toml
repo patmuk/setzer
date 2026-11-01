@@ -3,6 +3,7 @@ name = "setzer-theme-slate"
 description = "Slate theme for Setzer: cool blue-grey, light and dark."
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 

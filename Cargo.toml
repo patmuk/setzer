@@ -3,17 +3,19 @@ resolver = "2"
 members = ["crates/*", "examples/*"]
 
 [workspace.package]
-version = "0.1.0"
-edition = "2021"
+version = "1.0.0"
+edition = "2024"
+# The newest Rust a dependency needs (image 0.25.10).
+rust-version = "1.88"
 license = "MIT"
 repository = "https://github.com/patmuk/setzer"
 
 [workspace.dependencies]
-setzer = { path = "crates/setzer", version = "0.1.0" }
-setzer-core = { path = "crates/setzer-core", version = "0.1.0" }
-setzer-design = { path = "crates/setzer-design", version = "0.1.0" }
-setzer-components = { path = "crates/setzer-components", version = "0.1.0" }
-setzer-macros = { path = "crates/setzer-macros", version = "0.1.0" }
+setzer = { path = "crates/setzer", version = "1.0.0" }
+setzer-core = { path = "crates/setzer-core", version = "1.0.0" }
+setzer-design = { path = "crates/setzer-design", version = "1.0.0" }
+setzer-components = { path = "crates/setzer-components", version = "1.0.0" }
+setzer-macros = { path = "crates/setzer-macros", version = "1.0.0" }
 maud = "0.27"
 anyhow = "1"
 linkme = "0.3"

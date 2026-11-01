@@ -3,6 +3,7 @@ name = "setzer-core"
 description = "Setzer core: site builder, pages, rendering state, images, feeds, sitemap."
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 

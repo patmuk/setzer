@@ -1,6 +1,6 @@
 //! Reset and element defaults, shipped by every site (Tailwind's "base" layer).
 
-use crate::css::{rule, Css};
+use crate::css::{Css, rule};
 use crate::tokens::*;
 use crate::utility::*;
 

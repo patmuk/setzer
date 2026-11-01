@@ -12,16 +12,16 @@ pub mod lists;
 pub mod media;
 pub mod showcase;
 
-pub use button::{button, Look};
-pub use frame::{standard_frame, FrameParts, NavItem, ThemeLabels};
-pub use hero::{facts, hero, Fact, Hero, Link};
+pub use button::{Look, button};
+pub use frame::{FrameParts, NavItem, ThemeLabels, standard_frame};
+pub use hero::{Fact, Hero, Link, facts, hero};
 pub use layout::{muted, narrow_section, section, split, two_col, wrap};
 pub use lists::{
-    accordion, cards, contact, doc_list, doc_teasers, meta_line, notice, terms, timeline,
-    titled_list, translations, Card, ContactRow, Period, Term,
+    Card, ContactRow, Period, Term, accordion, cards, contact, doc_list, doc_teasers, meta_line,
+    notice, terms, timeline, titled_list, translations,
 };
 pub use media::{picture, prose, themed_picture};
-pub use showcase::{features, intro, Feature, Intro};
+pub use showcase::{Feature, Intro, features, intro};
 
 #[cfg(test)]
 mod lint {

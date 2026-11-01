@@ -3,6 +3,7 @@ name = "setzer-components"
 description = "Components for Setzer sites: standard frame, hero, cards, timeline, lists. Markup and typed CSS side by side."
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 

@@ -16,11 +16,11 @@ pub mod site;
 pub mod xml;
 
 pub use config::{base_url, site_name, url};
-pub use content::{documents_in, Body, Doc, Document, Part, StaticFile};
+pub use content::{Body, Doc, Document, Part, StaticFile, documents_in};
 pub use frame::Frame;
 pub use image::ImageRef;
 pub use lang::Lang;
-pub use maud::{html, Markup, PreEscaped, Render, DOCTYPE};
+pub use maud::{DOCTYPE, Markup, PreEscaped, Render, html};
 pub use page::{ContentMeta, Feed, FeedItem, Meta, PageDef, RenderFn};
 pub use render::{anchor, href, script, stylesheet, theme_script};
 pub use site::{Site, WebFont};
@@ -82,7 +82,7 @@ macro_rules! page {
 /// What a page or component usually needs, besides the design prelude.
 pub mod prelude {
     pub use crate::{
-        anchor, each, href, html, stylesheet, theme_script, Body, Doc, Document, Feed, FeedItem,
-        Frame, Html, ImageRef, Lang, PreEscaped, Render, StaticFile, DOCTYPE,
+        Body, DOCTYPE, Doc, Document, Feed, FeedItem, Frame, Html, ImageRef, Lang, PreEscaped,
+        Render, StaticFile, anchor, each, href, html, stylesheet, theme_script,
     };
 }

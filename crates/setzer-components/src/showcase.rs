@@ -3,7 +3,7 @@
 //! phones side by side.
 
 use crate::layout::wrap;
-use setzer_core::{each, html, Html};
+use setzer_core::{Html, each, html};
 use setzer_design::prelude::*;
 
 /// Text on the left, `media` on the right; one column on tablets and phones.

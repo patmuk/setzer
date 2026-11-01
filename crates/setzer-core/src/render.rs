@@ -8,7 +8,7 @@ use crate::image::ImageRef;
 use crate::lang::Lang;
 use crate::page::PageDef;
 use crate::script::SCRIPT;
-use maud::{html, Markup, PreEscaped};
+use maud::{Markup, PreEscaped, html};
 use std::cell::RefCell;
 
 /// Replaced by the hashed stylesheet path after all pages are rendered.

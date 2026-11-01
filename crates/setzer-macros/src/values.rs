@@ -1,6 +1,6 @@
 //! Front-matter values, their shapes, and the code emitted for them.
 
-use crate::markdown::{emit_parts, PartSpec};
+use crate::markdown::{PartSpec, emit_parts};
 use proc_macro2::{Ident, Span, TokenStream as Ts};
 use quote::{format_ident, quote};
 use std::collections::BTreeMap;

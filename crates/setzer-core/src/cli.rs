@@ -7,7 +7,7 @@
 //! * `--serve [port]`: afterwards, serve the site at `http://127.0.0.1:<port>/`
 //!   (default 1111) until Ctrl-C.
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{Result, anyhow, bail};
 use std::path::{Path, PathBuf};
 
 pub(crate) struct Options {

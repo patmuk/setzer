@@ -67,7 +67,9 @@ fn handle(mut stream: TcpStream, root: &Path, build: u128) -> std::io::Result<()
     }
     let file = root.join(path.trim_start_matches('/'));
     if file.is_dir() && !path.ends_with('/') {
-        let head = format!("HTTP/1.1 301 Moved Permanently\r\nLocation: {path}/\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        let head = format!(
+            "HTTP/1.1 301 Moved Permanently\r\nLocation: {path}/\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        );
         return stream.write_all(head.as_bytes());
     }
     let file = if file.is_dir() {

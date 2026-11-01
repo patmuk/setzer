@@ -1,4 +1,4 @@
-use setzer_core::{html, Html};
+use setzer_core::{Html, html};
 use setzer_design::prelude::*;
 
 /// How a button looks.

@@ -3,6 +3,7 @@ name = "setzer-macros"
 description = "Proc macros for Setzer: `content!` turns a folder's markdown into a typed struct at compile time."
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 

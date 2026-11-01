@@ -10,7 +10,7 @@
 //! Links with a scheme (`https:`, `mailto:`) stay as they are.
 
 use proc_macro2::{Span, TokenStream as Ts};
-use pulldown_cmark::{html, Event, LinkType, Options, Parser, Tag, TagEnd};
+use pulldown_cmark::{Event, LinkType, Options, Parser, Tag, TagEnd, html};
 use quote::quote;
 use std::path::Path;
 use syn::Ident;
@@ -56,19 +56,18 @@ pub fn body_parts(md: &str, manifest: &Path) -> Result<Vec<PartSpec>, String> {
             dest_url,
             ..
         }) = &events[i]
+            && is_internal(dest_url)
         {
-            if is_internal(dest_url) {
-                let end = (i + 1..events.len())
-                    .find(|&j| matches!(events[j], Event::End(TagEnd::Link)))
-                    .ok_or("unterminated link")?;
-                flush(&mut pending, &mut parts);
-                let mut text = String::new();
-                html::push_html(&mut text, events[i + 1..end].iter().cloned());
-                let plain_wiki = matches!(link_type, LinkType::WikiLink { has_pothole: false });
-                parts.push(classify(dest_url, text, plain_wiki, manifest)?);
-                i = end + 1;
-                continue;
-            }
+            let end = (i + 1..events.len())
+                .find(|&j| matches!(events[j], Event::End(TagEnd::Link)))
+                .ok_or("unterminated link")?;
+            flush(&mut pending, &mut parts);
+            let mut text = String::new();
+            html::push_html(&mut text, events[i + 1..end].iter().cloned());
+            let plain_wiki = matches!(link_type, LinkType::WikiLink { has_pothole: false });
+            parts.push(classify(dest_url, text, plain_wiki, manifest)?);
+            i = end + 1;
+            continue;
         }
         pending.push(events[i].clone());
         i += 1;
@@ -187,7 +186,9 @@ mod tests {
 
     #[test]
     fn links_are_classified() {
-        let p = parts("See [[apps/ringio]], [the app](apps/ringio#faq), [below](#faq) and [web](https://example.com).");
+        let p = parts(
+            "See [[apps/ringio]], [the app](apps/ringio#faq), [below](#faq) and [web](https://example.com).",
+        );
         assert!(
             matches!(&p[1], PartSpec::Page { segments, anchor: None, text: None } if segments == &["apps", "ringio"])
         );

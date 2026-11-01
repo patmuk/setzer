@@ -1,4 +1,4 @@
-use setzer_core::{html, Html, ImageRef, Render};
+use setzer_core::{Html, ImageRef, Render, html};
 use setzer_design::prelude::*;
 
 /// A responsive image: `srcset` of all variants, `sizes` as given.

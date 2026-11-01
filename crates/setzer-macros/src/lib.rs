@@ -17,14 +17,14 @@
 mod markdown;
 mod values;
 
-use markdown::{body_parts, split_front_matter, PartSpec};
+use markdown::{PartSpec, body_parts, split_front_matter};
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as Ts};
 use quote::{format_ident, quote};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use syn::parse::{Parse, ParseStream};
-use syn::{bracketed, parenthesized, Ident, LitInt, LitStr, Token};
+use syn::{Ident, LitInt, LitStr, Token, bracketed, parenthesized};
 use values::{Shape, Value, Values};
 
 type R<T> = Result<T, String>;
@@ -94,16 +94,33 @@ impl Parse for PageArgs {
             let key: Ident = input.parse()?;
             input.parse::<Token![:]>()?;
             match key.to_string().as_str() {
-                "content" => return Err(syn::Error::new(key.span(), "page! has no `content` option: the page's text is content.md, or the folder's only markdown file")),
+                "content" => {
+                    return Err(syn::Error::new(
+                        key.span(),
+                        "page! has no `content` option: the page's text is content.md, or the folder's only markdown file",
+                    ));
+                }
                 "documents" => args.documents = Some(input.parse::<LitStr>()?.value()),
                 "path" => args.path = Some(input.parse::<LitStr>()?.value()),
                 "feed" => args.feed = Some(input.parse()?),
                 "subpages" => {
                     let inner;
                     bracketed!(inner in input);
-                    args.subpages = Some(inner.parse_terminated(Ident::parse, Token![,])?.into_iter().collect());
+                    args.subpages = Some(
+                        inner
+                            .parse_terminated(Ident::parse, Token![,])?
+                            .into_iter()
+                            .collect(),
+                    );
                 }
-                other => return Err(syn::Error::new(key.span(), format!("unknown page! option `{other}`; known: subpages, documents, path, feed"))),
+                other => {
+                    return Err(syn::Error::new(
+                        key.span(),
+                        format!(
+                            "unknown page! option `{other}`; known: subpages, documents, path, feed"
+                        ),
+                    ));
+                }
             }
             if !input.is_empty() {
                 input.parse::<Token![,]>()?;
@@ -304,7 +321,10 @@ fn split_texts(dir: &Path) -> R<(Option<String>, Vec<String>)> {
             return Err(format!(
                 "{}: several markdown files ({}); name the page's text content.md and give every other file a same-named .rs file (a section)",
                 file_name(dir),
-                rest.iter().map(|s| format!("{s}.md")).collect::<Vec<_>>().join(", ")
+                rest.iter()
+                    .map(|s| format!("{s}.md"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
             ));
         }
     };
@@ -578,7 +598,7 @@ fn lang_variant(code: &str) -> R<Ts> {
         other => {
             return Err(format!(
                 "unknown language suffix .{other}.md (known: en, de, fr, it, gsw)"
-            ))
+            ));
         }
     })
 }
@@ -738,7 +758,7 @@ impl Parse for ImageArgs {
                     return Err(syn::Error::new(
                         key.span(),
                         format!("unknown image! key `{other}`; known: crop, widths"),
-                    ))
+                    ));
                 }
             }
         }
