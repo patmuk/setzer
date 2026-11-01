@@ -35,7 +35,7 @@ pub fn cloudflare_headers<'a>(
         .map(|(path, name, value)| format!("\n{path}\n  {name}: {value}\n"))
         .collect();
     format!(
-        "/*\n  Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'self'; script-src {script_src}; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: strict-origin-when-cross-origin\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n  Cross-Origin-Opener-Policy: same-origin\n\n/img/*\n  Cache-Control: public, max-age=31536000, immutable\n\n/css/*\n  Cache-Control: public, max-age=86400\n{extra}",
+        "/*\n  Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'self'; script-src {script_src}; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Referrer-Policy: strict-origin-when-cross-origin\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n  Cross-Origin-Opener-Policy: same-origin\n\n/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n{extra}",
     )
 }
 

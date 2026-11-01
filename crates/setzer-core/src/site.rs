@@ -18,12 +18,29 @@ use std::path::Path;
 /// Wraps a page's body into the site's header, footer and `<head>`.
 pub type FrameFn = fn(&Frame, Markup) -> Markup;
 
+/// A self-hosted web font, one woff2 file:
+///
+/// ```ignore
+/// WebFont {
+///     family: "Fraunces",
+///     file: setzer::static_file!("assets/fonts/fraunces.woff2"),
+///     weight: "100 900", // a weight, or a variable font's range
+///     italic: false,
+/// }
+/// ```
+pub struct WebFont {
+    pub family: &'static str,
+    pub file: StaticFile,
+    pub weight: &'static str,
+    pub italic: bool,
+}
+
 pub struct Site {
     langs: Vec<Lang>,
     theme: Theme,
     frame: Option<FrameFn>,
     css: Vec<Css>,
-    statics: Vec<&'static [StaticFile]>,
+    statics: Vec<&'static StaticFile>,
     files: Vec<(String, String)>,
     headers: bool,
     header_rules: Vec<(String, String, String)>,
@@ -80,9 +97,25 @@ impl Site {
         self
     }
 
-    /// Files copied as is to the site root: `static_files(setzer::static_dir!("static"))`.
+    /// Files copied as is into the site: `static_files(setzer::static_dir!("static"))`.
     pub fn static_files(mut self, files: &'static [StaticFile]) -> Site {
-        self.statics.push(files);
+        self.statics.extend(files);
+        self
+    }
+
+    /// Self-hosted web fonts: each file is published and declared with
+    /// `@font-face`. Name the families in the theme's `Fonts`.
+    pub fn fonts(mut self, fonts: &'static [WebFont]) -> Site {
+        for f in fonts {
+            self.statics.push(&f.file);
+            let style = if f.italic { "italic" } else { "normal" };
+            self.css.push(Css::raw(format!(
+                "@font-face{{font-family:\"{}\";src:url(\"{}\") format(\"woff2\");font-weight:{};font-style:{style};font-display:swap}}",
+                f.family,
+                f.file.url_path(),
+                f.weight,
+            )));
+        }
         self
     }
 
@@ -257,12 +290,7 @@ impl Site {
                 "a style contains the literal `{literal}`; use a token"
             ));
         }
-        let statics: BTreeSet<String> = self
-            .statics
-            .iter()
-            .flat_map(|s| s.iter())
-            .map(|f| format!("/{}", f.path))
-            .collect();
+        let statics: BTreeSet<String> = self.statics.iter().map(|f| f.url_path()).collect();
         for (target, anchor, from) in &state.links {
             match pages.iter().find(|(p, _)| p == target) {
                 None if statics.contains(target) => {}
@@ -336,7 +364,7 @@ impl Site {
         css.push_str(&component_css);
         let digest = Sha256::digest(css.as_bytes());
         let href = format!(
-            "/css/site-{}.css",
+            "/assets/css/site-{}.css",
             base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&digest[..9])
         );
         write_file(&out, &href, css.as_bytes())?;
@@ -352,9 +380,9 @@ impl Site {
         }
         let cache = cli::target_dir().map(|t| t.join("setzer-cache").join("img"));
         for img in &state.images {
-            img.write(&out.join("img"), cache.as_deref())?;
+            img.write(&out.join("assets").join("img"), cache.as_deref())?;
         }
-        for file in self.statics.iter().flat_map(|s| s.iter()) {
+        for file in &self.statics {
             write_file(&out, &format!("/{}", file.path), file.bytes)?;
         }
         let default_lang = self.langs[0];

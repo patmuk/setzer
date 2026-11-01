@@ -2,7 +2,7 @@
 //!
 //! * [`Site`]: the builder in `main`.
 //! * [`site!`] (in `main.rs`), [`page!`] (in every page's `mod.rs`),
-//!   [`image!`], [`static_dir!`]: turn folders and files into typed Rust at
+//!   [`image!`], [`static_file!`], [`static_dir!`]: turn folders and files into typed Rust at
 //!   compile time.
 //! * [`components`]: ready-made building blocks.
 //! * [`design`]: tokens, themes, utilities.
@@ -12,7 +12,7 @@
 pub use setzer_components as components;
 pub use setzer_core::*;
 pub use setzer_design as design;
-pub use setzer_macros::{image, site, static_dir};
+pub use setzer_macros::{image, site, static_dir, static_file};
 
 /// `Result` of `Site::write` and of `main`.
 pub type Result<T = ()> = anyhow::Result<T>;

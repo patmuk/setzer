@@ -199,8 +199,19 @@ impl Document {
     }
 }
 
-/// A file copied verbatim to the site root, embedded by `static_dir!`.
+/// A file copied verbatim into the site, embedded by `static_file!` or
+/// `static_dir!` (or by a crate that ships files for websites, like a company
+/// logo).
 pub struct StaticFile {
+    /// Where it is written, below the site root: `assets/fonts/inter-3f9a1c2b.woff2`.
     pub path: &'static str,
     pub bytes: &'static [u8],
+}
+
+impl StaticFile {
+    /// The path of its URL, for `src`, `href` or `content`:
+    /// `/assets/fonts/inter-3f9a1c2b.woff2`.
+    pub fn url_path(&self) -> String {
+        format!("/{}", self.path)
+    }
 }

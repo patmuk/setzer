@@ -25,7 +25,9 @@ pub struct FrameParts {
     pub nav: Vec<NavItem>,
     pub skip: String,
     pub favicon: String,
-    /// Image before the site name in the header (e.g. `/logo.svg`); the name stays as text.
+    /// 180×180 PNG for the iOS home screen (`None`: iOS makes one from a screenshot).
+    pub apple_touch_icon: Option<String>,
+    /// Image before the site name in the header (e.g. `LOGO.url_path()`); the name stays as text.
     pub logo: Option<String>,
     /// The logo for dark mode, if it needs other colours (`None`: `logo` in both).
     pub logo_dark: Option<String>,
@@ -71,6 +73,7 @@ pub fn standard_frame(page: &Frame, parts: &FrameParts, body: Html) -> Html {
                 meta property="og:locale" content=(page.lang.locale());
                 @if let Some(img) = &parts.og_image { meta property="og:image" content=(absolute(img)); }
                 link rel="icon" href=(parts.favicon) type="image/svg+xml";
+                @if let Some(icon) = &parts.apple_touch_icon { link rel="apple-touch-icon" href=(icon); }
                 (stylesheet())
                 @if parts.theme.is_some() { (theme_script()) }
             }

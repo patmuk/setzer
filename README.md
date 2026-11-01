@@ -237,7 +237,7 @@ This is the output in `target/site/`:
 
 ```html
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Hello World</title>
-<link rel="stylesheet" href="/css/site-<hash>.css"></head><body>
+<link rel="stylesheet" href="/assets/css/site-<hash>.css"></head><body>
 <h1><span class="inline-block p-m rounded-m bg-accent-soft text-accent-fg text-h1">Hello</span>
 <span class="inline-block p-m rounded-m bg-accent-soft text-accent-fg text-h1">World</span></h1>
 <p>Everything above the closing <code>+++</code> is front matter: …</p>
@@ -593,8 +593,30 @@ lazy-loading `<img>` with a `srcset` and fixed dimensions, and `themed_picture` 
 light or dark variant without loading both. Only images that some page uses are resized, and the resized versions are
 cached between builds.
 
-`.static_files(setzer::static_dir!("static"))` embeds a folder (favicon, PDFs, `robots.txt`)
-and copies it to the site root.
+Files that pages link to (a favicon, an icon, a PDF) are embedded one by one with `static_file!`.
+The served name carries a hash of the content, so browsers may cache it for a year and still get a
+new version at once:
+
+```rust
+pub const FAVICON: StaticFile =
+    setzer::static_file!("assets/img/favicon.svg"); // → /assets/img/favicon-3f9a1c2b.svg
+
+Site::new(…).static_files(&[FAVICON])
+// in the markup:
+link rel="icon" href=(FAVICON.url_path());
+```
+
+`.static_files(setzer::static_dir!("static"))` copies a whole folder to the site root under the
+same names, for files whose path is fixed: `robots.txt`, `.well-known/`, `_redirects`. Keep the
+files for `static_file!` in `assets/`, laid out as they are served, not in `static/`.
+
+Files shared by several sites, like a company logo, can come from a crate: it declares each one
+with `static_file!("dark/logo.svg" => "assets/img/company/logo.svg")` (source, then where it is
+served), the site passes the ones it uses, `.static_files(&[logo::MARK, logo::FAVICON])`,
+and links them with `logo::MARK.url_path()`.
+
+The output follows the most common layout: what carries a hash in its name is under `/assets/`
+(`css/`, `img/`, `fonts/`), cached for a year; what has a fixed name is at the root.
 
 ### The frame
 
@@ -735,12 +757,17 @@ The tokens are `Space` (an 8pt grid by default, `SpaceScale::grid(8.0)`, and con
 its websites can share one source of truth. A raw keyword property can be set with
 `raw("object-fit", "cover")`, and the run fails if a length or colour sneaks in there.
 
-Web fonts are files of the site (e.g. in `static/fonts/`), declared once and named in the theme:
+Web fonts are files of the site (e.g. in `assets/fonts/`), declared once and named in the theme:
 
 ```rust
 Site::new(…)
     .theme(Theme { fonts: Fonts { heading: "\"Fraunces\", Georgia, serif", ..Fonts::default() }, ..Theme::default() })
-    .css(Css::font_face("Fraunces", "/fonts/fraunces.woff2", "100 900", false))
+    .fonts(&[WebFont {
+        family: "Fraunces",
+        file: setzer::static_file!("assets/fonts/fraunces.woff2"),
+        weight: "100 900", // a weight, or a variable font's range
+        italic: false,
+    }])
 ```
 
 The generated Content-Security-Policy allows fonts from the site itself only, so there are no

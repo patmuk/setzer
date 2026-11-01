@@ -23,7 +23,7 @@ pub use lang::Lang;
 pub use maud::{html, Markup, PreEscaped, Render, DOCTYPE};
 pub use page::{ContentMeta, Feed, FeedItem, Meta, PageDef, RenderFn};
 pub use render::{anchor, href, script, stylesheet, theme_script};
-pub use site::Site;
+pub use site::{Site, WebFont};
 
 /// Every page of the program. Each `setzer::page!` adds its `PAGE` here
 /// when the program is linked, so a page that is compiled is part of the site.
@@ -83,6 +83,6 @@ macro_rules! page {
 pub mod prelude {
     pub use crate::{
         anchor, each, href, html, stylesheet, theme_script, Body, Doc, Document, Feed, FeedItem,
-        Frame, Html, ImageRef, Lang, PreEscaped, Render, DOCTYPE,
+        Frame, Html, ImageRef, Lang, PreEscaped, Render, StaticFile, DOCTYPE,
     };
 }

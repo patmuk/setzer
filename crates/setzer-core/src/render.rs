@@ -12,7 +12,7 @@ use maud::{html, Markup, PreEscaped};
 use std::cell::RefCell;
 
 /// Replaced by the hashed stylesheet path after all pages are rendered.
-pub(crate) const STYLESHEET_PLACEHOLDER: &str = "/css/__setzer_stylesheet__.css";
+pub(crate) const STYLESHEET_PLACEHOLDER: &str = "/assets/css/__setzer_stylesheet__.css";
 
 #[derive(Default)]
 pub(crate) struct State {

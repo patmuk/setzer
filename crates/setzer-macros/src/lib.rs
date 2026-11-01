@@ -7,6 +7,8 @@
 //!   sections, the collection, `PAGE`, the registration, and attaches the
 //!   folder's `mod.rs` (whose `setzer::page!(…)` holds the options);
 //! * `image!("src/www/images/photo.jpg", crop: (x, y, w, h), widths: [640, 1280])`;
+//! * `static_file!("assets/fonts/inter.woff2")`: one file, served under a
+//!   name that carries the hash of its content;
 //! * `static_dir!("static")`: files to copy to the site root.
 //!
 //! Problems (a missing translation key, a link to a page that does not
@@ -760,7 +762,6 @@ pub fn image(input: TokenStream) -> TokenStream {
 }
 
 fn image_impl(args: ImageArgs) -> R<Ts> {
-    use sha2::{Digest, Sha256};
     let path = manifest_dir()?.join(args.file.value());
     let (w, h) = image_dims::image_dimensions(&path)
         .map_err(|e| format!("image!: {}: {e}", path.display()))?;
@@ -784,28 +785,19 @@ fn image_impl(args: ImageArgs) -> R<Ts> {
             "image!: every width is larger than the {cw}px wide image"
         ));
     }
-    // Stable across machines: hash the path below the crate and the crop.
-    let rel = path
-        .strip_prefix(manifest_dir()?)
-        .unwrap_or(&path)
-        .to_string_lossy()
-        .to_string();
-    let digest = Sha256::digest(format!("{rel}{:?}", args.crop).as_bytes());
+    // The content and the crop: a changed photo gets a new name, so the
+    // year-long cache of `/assets/` never serves the old one.
+    let bytes = std::fs::read(&path).map_err(|e| format!("image!: {}: {e}", path.display()))?;
+    let mut hashed = bytes;
+    hashed.extend(format!("{:?}", args.crop).as_bytes());
     let stem = path.file_stem().unwrap().to_string_lossy();
-    let name = format!(
-        "{stem}-{}",
-        digest
-            .iter()
-            .take(4)
-            .map(|b| format!("{b:02x}"))
-            .collect::<String>()
-    );
+    let name = format!("{stem}-{}", short_hash(&hashed));
     let max = *widths.last().unwrap();
     let height = ((max as f64) * (ch as f64) / (cw as f64)).round() as u32;
-    let src = format!("/img/{name}-{max}.jpg");
+    let src = format!("/assets/img/{name}-{max}.jpg");
     let srcset = widths
         .iter()
-        .map(|w| format!("/img/{name}-{w}.jpg {w}w"))
+        .map(|w| format!("/assets/img/{name}-{w}.jpg {w}w"))
         .collect::<Vec<_>>()
         .join(", ");
     let abs = path.to_string_lossy().to_string();
@@ -816,6 +808,78 @@ fn image_impl(args: ImageArgs) -> R<Ts> {
     Ok(
         quote!(::setzer::ImageRef::__new(include_bytes!(#abs), #name, #crop, &[#(#widths),*], #max, #height, #src, #srcset)),
     )
+}
+
+/// The first 8 hex digits of the SHA-256 of `bytes`: the part of a file
+/// name that changes with its content.
+fn short_hash(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(bytes)
+        .iter()
+        .take(4)
+        .map(|b| format!("{b:02x}"))
+        .collect()
+}
+
+// ---- static_file! --------------------------------------------------------------
+
+struct StaticFileArgs {
+    source: LitStr,
+    served: Option<LitStr>,
+}
+
+impl Parse for StaticFileArgs {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let source = input.parse()?;
+        let served = if input.is_empty() {
+            None
+        } else {
+            input.parse::<Token![=>]>()?;
+            Some(input.parse()?)
+        };
+        Ok(StaticFileArgs { source, served })
+    }
+}
+
+/// One file of the crate, served under a name that carries the hash of its
+/// content: `static_file!("assets/fonts/inter.woff2")` is served as
+/// `/assets/fonts/inter-3f9a1c2b.woff2`. A new version gets a new name, so
+/// browsers may cache it for a year. Link it by `url_path()`.
+///
+/// Where the crate keeps the file elsewhere, name the served path:
+/// `static_file!("dark/favicon.svg" => "assets/img/logos/favicon.svg")`.
+#[proc_macro]
+pub fn static_file(input: TokenStream) -> TokenStream {
+    let args = match syn::parse::<StaticFileArgs>(input) {
+        Ok(a) => a,
+        Err(e) => return e.to_compile_error().into(),
+    };
+    fail((|| {
+        let path = manifest_dir()?.join(args.source.value());
+        let bytes =
+            std::fs::read(&path).map_err(|e| format!("static_file!: {}: {e}", path.display()))?;
+        let served = args.served.as_ref().unwrap_or(&args.source).value();
+        if served.starts_with('/') {
+            return Err(format!(
+                "static_file!: \"{served}\" is below the site root, write it without the leading `/`"
+            ));
+        }
+        let hash = short_hash(&bytes);
+        let (dir, name) = served
+            .rsplit_once('/')
+            .map_or(("", served.as_str()), |(d, n)| (d, n));
+        let name = match name.split_once('.') {
+            Some((stem, ext)) => format!("{stem}-{hash}.{ext}"),
+            None => format!("{name}-{hash}"),
+        };
+        let served = if dir.is_empty() {
+            name
+        } else {
+            format!("{dir}/{name}")
+        };
+        let abs = path.to_string_lossy().to_string();
+        Ok(quote!(::setzer::StaticFile { path: #served, bytes: include_bytes!(#abs) }))
+    })())
 }
 
 // ---- static_dir! ---------------------------------------------------------------
