@@ -33,3 +33,5 @@ syn = { version = "2", features = ["full"] }
 quote = "1"
 image-dims = { package = "image", version = "0.25", default-features = false, features = ["jpeg", "png"] }
 proc-macro2 = "1"
+# SVG → PNG for favicon fallbacks. Without fonts: text in such an SVG must be outlined.
+resvg = { version = "0.49", default-features = false }

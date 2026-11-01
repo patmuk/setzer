@@ -1,9 +1,10 @@
 //! While `Site::write` renders a page, it keeps a little state here: the
-//! language, which pages and sections were linked, which images and whether
-//! the theme script were used. Links and images report to it; afterwards the
-//! site checks the links and produces exactly the images used.
+//! language, which pages and sections were linked, which images, icons and
+//! scripts were used. Links, images and icons report to it; afterwards the
+//! site checks the links and produces exactly the images and icons used.
 
 use crate::config;
+use crate::content::StaticFile;
 use crate::image::ImageRef;
 use crate::lang::Lang;
 use crate::page::PageDef;
@@ -22,6 +23,9 @@ pub(crate) struct State {
     /// (target path, anchor, linked from)
     pub links: Vec<(String, Option<String>, String)>,
     pub images: Vec<&'static ImageRef>,
+    /// Icons the pages linked; written with the site, an SVG favicon with
+    /// its PNG fallback.
+    pub icons: Vec<&'static StaticFile>,
     /// Inline scripts the pages used; their hashes go into the CSP.
     pub scripts: std::collections::BTreeSet<&'static str>,
 }
@@ -70,6 +74,48 @@ pub(crate) fn record_image(img: &'static ImageRef) {
     });
 }
 
+fn record_icon(file: &'static StaticFile) {
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        if !s.icons.iter().any(|f| f.path == file.path) {
+            s.icons.push(file);
+        }
+    });
+}
+
+/// Size of the PNG that stands in for an SVG favicon.
+pub(crate) const FAVICON_PNG_SIZE: u32 = 32;
+
+/// Where the PNG fallback of an SVG favicon is served: `favicon-3f9a1c2b.svg`
+/// → `favicon-3f9a1c2b-32.png`.
+pub(crate) fn favicon_png(svg: &StaticFile) -> Option<String> {
+    svg.path
+        .strip_suffix(".svg")
+        .map(|stem| format!("{stem}-{FAVICON_PNG_SIZE}.png"))
+}
+
+/// `<link rel="icon">` for the browser tab, from an SVG or a PNG of the
+/// crate (`static_file!`). The site publishes it; for an SVG it also renders
+/// a 32×32 PNG, for browsers without SVG favicons (older Safari).
+pub fn favicon(file: &'static StaticFile) -> Markup {
+    record_icon(file);
+    match favicon_png(file) {
+        // The PNG first, the SVG last: browsers that can show the SVG take it.
+        Some(png) => html! {
+            link rel="icon" href={ "/" (png) } type="image/png" sizes=(format!("{FAVICON_PNG_SIZE}x{FAVICON_PNG_SIZE}"));
+            link rel="icon" href=(file.url_path()) type="image/svg+xml";
+        },
+        None => html! { link rel="icon" href=(file.url_path()); },
+    }
+}
+
+/// `<link rel="apple-touch-icon">`: a 180×180 PNG for the iOS home screen.
+/// The site publishes it.
+pub fn apple_touch_icon(file: &'static StaticFile) -> Markup {
+    record_icon(file);
+    html! { link rel="apple-touch-icon" href=(file.url_path()); }
+}
+
 /// Root-relative path of `page` in `lang`. The link is checked after
 /// rendering: its target must be one of the site's pages.
 pub fn href(page: &'static PageDef, lang: Lang) -> String {
@@ -111,4 +157,36 @@ pub fn theme_script() -> Markup {
 pub fn script(js: &'static str) -> Markup {
     STATE.with(|s| s.borrow_mut().scripts.insert(js));
     html! { script { (PreEscaped(js)) } }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    static SVG: StaticFile = StaticFile {
+        path: "assets/img/favicon-3f9a1c2b.svg",
+        bytes: b"<svg/>",
+    };
+    static PNG: StaticFile = StaticFile {
+        path: "assets/img/favicon-3f9a1c2b.png",
+        bytes: b"",
+    };
+
+    #[test]
+    fn svg_favicon_has_a_png_fallback() {
+        let html = favicon(&SVG).into_string();
+        assert_eq!(
+            html,
+            r#"<link rel="icon" href="/assets/img/favicon-3f9a1c2b-32.png" type="image/png" sizes="32x32"><link rel="icon" href="/assets/img/favicon-3f9a1c2b.svg" type="image/svg+xml">"#
+        );
+        assert!(STATE.with(|s| s.borrow().icons.iter().any(|f| f.path == SVG.path)));
+    }
+
+    #[test]
+    fn png_favicon_stands_alone() {
+        assert_eq!(
+            favicon(&PNG).into_string(),
+            r#"<link rel="icon" href="/assets/img/favicon-3f9a1c2b.png">"#
+        );
+    }
 }

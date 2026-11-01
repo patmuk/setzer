@@ -7,6 +7,26 @@ use image::codecs::jpeg::JpegEncoder;
 use image::imageops::FilterType;
 use std::path::Path;
 
+/// An SVG drawn into a `size`×`size` PNG, centred, transparent around it.
+/// Text must be outlined (paths): which fonts a build has differs between
+/// machines, so Setzer draws no text and refuses an SVG with `<text>`.
+pub(crate) fn svg_to_png(svg: &[u8], size: u32) -> Result<Vec<u8>> {
+    use resvg::{tiny_skia, usvg};
+    if svg.windows(5).any(|w| w == b"<text") {
+        anyhow::bail!("it contains <text>; convert the text to paths (outlines) first");
+    }
+    let tree = usvg::Tree::from_data(svg, &usvg::Options::default())?;
+    let (w, h) = (tree.size().width(), tree.size().height());
+    let scale = size as f32 / w.max(h);
+    let transform = tiny_skia::Transform::from_scale(scale, scale).post_translate(
+        (size as f32 - w * scale) / 2.0,
+        (size as f32 - h * scale) / 2.0,
+    );
+    let mut pixmap = tiny_skia::Pixmap::new(size, size).context("empty PNG size")?;
+    resvg::render(&tree, transform, &mut pixmap.as_mut());
+    Ok(pixmap.encode_png()?)
+}
+
 pub struct ImageRef {
     bytes: &'static [u8],
     name: &'static str,
@@ -97,5 +117,34 @@ impl ImageRef {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn svg_becomes_a_square_png_centred() {
+        // 2:1, red: fills the middle band of the square, the corners stay clear.
+        let svg = br##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><rect width="20" height="10" fill="#f00"/></svg>"##;
+        let png = image::load_from_memory(&svg_to_png(svg, 32).unwrap())
+            .unwrap()
+            .to_rgba8();
+        assert_eq!(png.dimensions(), (32, 32));
+        assert_eq!(png.get_pixel(16, 16).0, [255, 0, 0, 255]);
+        assert_eq!(png.get_pixel(0, 0).0[3], 0);
+    }
+
+    #[test]
+    fn svg_with_text_is_refused() {
+        let svg =
+            br#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text>PM</text></svg>"#;
+        assert!(
+            svg_to_png(svg, 32)
+                .unwrap_err()
+                .to_string()
+                .contains("<text>")
+        );
     }
 }

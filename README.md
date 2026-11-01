@@ -598,13 +598,19 @@ The served name carries a hash of the content, so browsers may cache it for a ye
 new version at once:
 
 ```rust
-pub const FAVICON: StaticFile =
-    setzer::static_file!("assets/img/favicon.svg"); // → /assets/img/favicon-3f9a1c2b.svg
+pub const ICON: StaticFile =
+    setzer::static_file!("assets/img/icon.svg"); // → /assets/img/icon-3f9a1c2b.svg
 
-Site::new(…).static_files(&[FAVICON])
+Site::new(…).static_files(&[ICON])
 // in the markup:
-link rel="icon" href=(FAVICON.url_path());
+img src=(ICON.url_path()) alt="";
 ```
+
+Icons are the exception: `favicon(&FAVICON)` and `apple_touch_icon(&ICON)` (or the frame's
+`favicon` and `apple_touch_icon`) write the `<link>` and publish the file themselves. An SVG
+favicon also gets a 32×32 PNG, rendered when the site is written, for browsers that cannot show
+SVG favicons (older Safari); a PNG favicon is used as it is. Setzer draws the SVG without fonts, so
+text in it must be converted to paths, or the build stops and says so.
 
 `.static_files(setzer::static_dir!("static"))` copies a whole folder to the site root under the
 same names, for files whose path is fixed: `robots.txt`, `.well-known/`, `_redirects`. Keep the
@@ -669,9 +675,10 @@ pub fn frame(page: &Frame, body: Html) -> Html {
             NavItem { label: "Contact".into(), href: anchor(&www::PAGE, "contact", lang) },
         ],
         skip: "Skip to content".into(),
-        favicon: "/favicon.svg".into(),
-        logo: Some("/logo.svg".into()),                     // shown before the site name; None for text only
-        logo_dark: None,                                    // Some("/logo-dark.svg".into()) if dark mode needs other colours
+        favicon: &FAVICON,                                  // static_file!: SVG (+ PNG fallback) or PNG
+        apple_touch_icon: None,                             // Some(&TOUCH_ICON): 180×180 PNG for the iOS home screen
+        logo: Some(LOGO.url_path()),                        // shown before the site name; None for text only
+        logo_dark: None,                                    // Some(LOGO_DARK.url_path()) if dark mode needs other colours
         description: "Websites built with Setzer.".into(), // for pages without a description
         og_image: Some("/og.png".into()),                   // preview image when the link is shared
         footer: html! { p { "© 2026 Example" } },

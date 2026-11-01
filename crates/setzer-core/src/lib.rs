@@ -22,7 +22,7 @@ pub use image::ImageRef;
 pub use lang::Lang;
 pub use maud::{DOCTYPE, Markup, PreEscaped, Render, html};
 pub use page::{ContentMeta, Feed, FeedItem, Meta, PageDef, RenderFn};
-pub use render::{anchor, href, script, stylesheet, theme_script};
+pub use render::{anchor, apple_touch_icon, favicon, href, script, stylesheet, theme_script};
 pub use site::{Site, WebFont};
 
 /// Every page of the program. Each `setzer::page!` adds its `PAGE` here
