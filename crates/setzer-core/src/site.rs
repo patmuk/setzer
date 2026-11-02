@@ -389,11 +389,12 @@ impl Site {
         }
         for icon in &state.icons {
             write_file(&out, &icon.url_path(), icon.bytes)?;
-            if let Some(png) = render::favicon_png(icon) {
-                let bytes = crate::image::svg_to_png(icon.bytes, render::FAVICON_PNG_SIZE)
-                    .with_context(|| format!("rendering {} as PNG", icon.path))?;
-                write_file(&out, &png, &bytes)?;
-            }
+        }
+        for (svg, size) in &state.icon_pngs {
+            let png = render::png_path(svg, *size).expect("only SVGs are drawn as PNGs");
+            let bytes = crate::image::svg_to_png(svg.bytes, *size)
+                .with_context(|| format!("rendering {} as PNG", svg.path))?;
+            write_file(&out, &png, &bytes)?;
         }
         let default_lang = self.langs[0];
         let sitemap: Vec<xml::SitemapEntry> = entries

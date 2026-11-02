@@ -30,7 +30,11 @@ pub struct FrameParts {
     /// SVG (gets a PNG fallback) or PNG, e.g. `&FAVICON` from `static_file!`.
     /// The site publishes it; no `static_files` entry needed.
     pub favicon: &'static StaticFile,
-    /// 180×180 PNG for the iOS home screen (`None`: iOS makes one from a screenshot).
+    /// The favicon for browsers in dark mode, if it needs other colours
+    /// (`None`: `favicon` in both).
+    pub favicon_dark: Option<&'static StaticFile>,
+    /// For the iOS home screen: an SVG (drawn as a 180×180 PNG) or such a PNG
+    /// (`None`: iOS makes one from a screenshot).
     pub apple_touch_icon: Option<&'static StaticFile>,
     /// Image before the site name in the header (e.g. `LOGO.url_path()`); the name stays as text.
     pub logo: Option<String>,
@@ -77,7 +81,7 @@ pub fn standard_frame(page: &Frame, parts: &FrameParts, body: Html) -> Html {
                 meta property="og:site_name" content=(name);
                 meta property="og:locale" content=(page.lang.locale());
                 @if let Some(img) = &parts.og_image { meta property="og:image" content=(absolute(img)); }
-                (favicon(parts.favicon))
+                (favicon(parts.favicon, parts.favicon_dark))
                 @if let Some(icon) = parts.apple_touch_icon { (apple_touch_icon(icon)) }
                 (stylesheet())
                 @if parts.theme.is_some() { (theme_script()) }

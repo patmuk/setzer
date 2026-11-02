@@ -606,11 +606,18 @@ Site::new(…).static_files(&[ICON])
 img src=(ICON.url_path()) alt="";
 ```
 
-Icons are the exception: `favicon(&FAVICON)` and `apple_touch_icon(&ICON)` (or the frame's
-`favicon` and `apple_touch_icon`) write the `<link>` and publish the file themselves. An SVG
-favicon also gets a 32×32 PNG, rendered when the site is written, for browsers that cannot show
-SVG favicons (older Safari); a PNG favicon is used as it is. Setzer draws the SVG without fonts, so
-text in it must be converted to paths, or the build stops and says so.
+Icons are the exception: `favicon(&FAVICON, Some(&FAVICON_DARK))` and `apple_touch_icon(&ICON)`
+(or the frame's `favicon`, `favicon_dark` and `apple_touch_icon`) write the `<link>` and publish
+the files themselves. An SVG or a PNG works for both:
+
+- An SVG favicon also gets a 32×32 PNG, for browsers that cannot show SVG favicons (older
+  Safari). With a dark favicon, each is linked for the browser's colour scheme
+  (`media="(prefers-color-scheme: dark)"`); a tab icon cannot follow the site's own toggle.
+- An SVG Apple touch icon is drawn as the 180×180 PNG iOS wants. iOS rounds the corners and
+  fills transparent parts with black, so the icon should cover the whole square.
+
+The PNGs are rendered when the site is written. Setzer draws the SVG without fonts, so text in it
+must be converted to paths, or the build stops and says so.
 
 `.static_files(setzer::static_dir!("static"))` copies a whole folder to the site root under the
 same names, for files whose path is fixed: `robots.txt`, `.well-known/`, `_redirects`. Keep the
@@ -676,7 +683,8 @@ pub fn frame(page: &Frame, body: Html) -> Html {
         ],
         skip: "Skip to content".into(),
         favicon: &FAVICON,                                  // static_file!: SVG (+ PNG fallback) or PNG
-        apple_touch_icon: None,                             // Some(&TOUCH_ICON): 180×180 PNG for the iOS home screen
+        favicon_dark: None,                                 // Some(&FAVICON_DARK) for browsers in dark mode
+        apple_touch_icon: None,                             // Some(&ICON): SVG or 180×180 PNG for the iOS home screen
         logo: Some(LOGO.url_path()),                        // shown before the site name; None for text only
         logo_dark: None,                                    // Some(LOGO_DARK.url_path()) if dark mode needs other colours
         description: "Websites built with Setzer.".into(), // for pages without a description

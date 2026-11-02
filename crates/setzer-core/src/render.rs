@@ -23,9 +23,10 @@ pub(crate) struct State {
     /// (target path, anchor, linked from)
     pub links: Vec<(String, Option<String>, String)>,
     pub images: Vec<&'static ImageRef>,
-    /// Icons the pages linked; written with the site, an SVG favicon with
-    /// its PNG fallback.
+    /// Icons the pages linked, published as they are.
     pub icons: Vec<&'static StaticFile>,
+    /// SVG icons the pages linked as PNGs, with the size to draw them at.
+    pub icon_pngs: Vec<(&'static StaticFile, u32)>,
     /// Inline scripts the pages used; their hashes go into the CSP.
     pub scripts: std::collections::BTreeSet<&'static str>,
 }
@@ -83,37 +84,81 @@ fn record_icon(file: &'static StaticFile) {
     });
 }
 
-/// Size of the PNG that stands in for an SVG favicon.
-pub(crate) const FAVICON_PNG_SIZE: u32 = 32;
+fn record_icon_png(svg: &'static StaticFile, size: u32) {
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        if !s
+            .icon_pngs
+            .iter()
+            .any(|(f, n)| f.path == svg.path && *n == size)
+        {
+            s.icon_pngs.push((svg, size));
+        }
+    });
+}
 
-/// Where the PNG fallback of an SVG favicon is served: `favicon-3f9a1c2b.svg`
-/// → `favicon-3f9a1c2b-32.png`.
-pub(crate) fn favicon_png(svg: &StaticFile) -> Option<String> {
-    svg.path
+/// Size of the PNG that stands in for an SVG favicon.
+const FAVICON_PNG_SIZE: u32 = 32;
+/// The size iOS wants for the home screen.
+const APPLE_TOUCH_ICON_SIZE: u32 = 180;
+
+/// Where an SVG drawn as a `size`×`size` PNG is served:
+/// `favicon-3f9a1c2b.svg` → `favicon-3f9a1c2b-32.png`. `None` if `file` is
+/// not an SVG.
+pub(crate) fn png_path(file: &StaticFile, size: u32) -> Option<String> {
+    file.path
         .strip_suffix(".svg")
-        .map(|stem| format!("{stem}-{FAVICON_PNG_SIZE}.png"))
+        .map(|stem| format!("{stem}-{size}.png"))
 }
 
 /// `<link rel="icon">` for the browser tab, from an SVG or a PNG of the
 /// crate (`static_file!`). The site publishes it; for an SVG it also renders
 /// a 32×32 PNG, for browsers without SVG favicons (older Safari).
-pub fn favicon(file: &'static StaticFile) -> Markup {
-    record_icon(file);
-    match favicon_png(file) {
-        // The PNG first, the SVG last: browsers that can show the SVG take it.
-        Some(png) => html! {
-            link rel="icon" href={ "/" (png) } type="image/png" sizes=(format!("{FAVICON_PNG_SIZE}x{FAVICON_PNG_SIZE}"));
-            link rel="icon" href=(file.url_path()) type="image/svg+xml";
+///
+/// With a `dark` icon, each one is linked for its colour scheme
+/// (`media="(prefers-color-scheme: …)"`): the browser's, since a tab icon
+/// cannot follow the site's own light/dark toggle.
+pub fn favicon(file: &'static StaticFile, dark: Option<&'static StaticFile>) -> Markup {
+    match dark {
+        None => favicon_links(file, None),
+        Some(dark) => html! {
+            (favicon_links(file, Some("(prefers-color-scheme: light)")))
+            (favicon_links(dark, Some("(prefers-color-scheme: dark)")))
         },
-        None => html! { link rel="icon" href=(file.url_path()); },
     }
 }
 
-/// `<link rel="apple-touch-icon">`: a 180×180 PNG for the iOS home screen.
-/// The site publishes it.
-pub fn apple_touch_icon(file: &'static StaticFile) -> Markup {
+fn favicon_links(file: &'static StaticFile, media: Option<&str>) -> Markup {
     record_icon(file);
-    html! { link rel="apple-touch-icon" href=(file.url_path()); }
+    match png_path(file, FAVICON_PNG_SIZE) {
+        // The PNG first, the SVG last: browsers that can show the SVG take it.
+        Some(png) => {
+            record_icon_png(file, FAVICON_PNG_SIZE);
+            html! {
+                link rel="icon" href={ "/" (png) } type="image/png" sizes=(format!("{FAVICON_PNG_SIZE}x{FAVICON_PNG_SIZE}")) media=[media];
+                link rel="icon" href=(file.url_path()) type="image/svg+xml" media=[media];
+            }
+        }
+        None => html! { link rel="icon" href=(file.url_path()) media=[media]; },
+    }
+}
+
+/// `<link rel="apple-touch-icon">` for the iOS home screen, which wants a
+/// 180×180 PNG: an SVG is drawn at that size, a PNG is used as it is. iOS
+/// rounds the corners itself and fills transparent parts with black, so the
+/// icon should cover the whole square. The site publishes it.
+pub fn apple_touch_icon(file: &'static StaticFile) -> Markup {
+    let href = match png_path(file, APPLE_TOUCH_ICON_SIZE) {
+        Some(png) => {
+            record_icon_png(file, APPLE_TOUCH_ICON_SIZE);
+            format!("/{png}")
+        }
+        None => {
+            record_icon(file);
+            file.url_path()
+        }
+    };
+    html! { link rel="apple-touch-icon" href=(href); }
 }
 
 /// Root-relative path of `page` in `lang`. The link is checked after
@@ -167,6 +212,10 @@ mod tests {
         path: "assets/img/favicon-3f9a1c2b.svg",
         bytes: b"<svg/>",
     };
+    static SVG_DARK: StaticFile = StaticFile {
+        path: "assets/img/favicon-dark-77aa0011.svg",
+        bytes: b"<svg/>",
+    };
     static PNG: StaticFile = StaticFile {
         path: "assets/img/favicon-3f9a1c2b.png",
         bytes: b"",
@@ -174,19 +223,62 @@ mod tests {
 
     #[test]
     fn svg_favicon_has_a_png_fallback() {
-        let html = favicon(&SVG).into_string();
         assert_eq!(
-            html,
+            favicon(&SVG, None).into_string(),
             r#"<link rel="icon" href="/assets/img/favicon-3f9a1c2b-32.png" type="image/png" sizes="32x32"><link rel="icon" href="/assets/img/favicon-3f9a1c2b.svg" type="image/svg+xml">"#
         );
-        assert!(STATE.with(|s| s.borrow().icons.iter().any(|f| f.path == SVG.path)));
+        STATE.with(|s| {
+            let s = s.borrow();
+            assert!(s.icons.iter().any(|f| f.path == SVG.path));
+            assert!(
+                s.icon_pngs
+                    .iter()
+                    .any(|(f, n)| f.path == SVG.path && *n == 32)
+            );
+        });
     }
 
     #[test]
     fn png_favicon_stands_alone() {
         assert_eq!(
-            favicon(&PNG).into_string(),
+            favicon(&PNG, None).into_string(),
             r#"<link rel="icon" href="/assets/img/favicon-3f9a1c2b.png">"#
+        );
+    }
+
+    #[test]
+    fn dark_favicon_follows_the_browsers_colour_scheme() {
+        let html = favicon(&SVG, Some(&SVG_DARK)).into_string();
+        assert_eq!(
+            html.matches(r#"media="(prefers-color-scheme: light)""#)
+                .count(),
+            2
+        );
+        assert_eq!(
+            html.matches(r#"media="(prefers-color-scheme: dark)""#)
+                .count(),
+            2
+        );
+        assert!(html.contains(r#"href="/assets/img/favicon-dark-77aa0011-32.png""#));
+    }
+
+    #[test]
+    fn svg_apple_touch_icon_becomes_a_180_png() {
+        assert_eq!(
+            apple_touch_icon(&SVG).into_string(),
+            r#"<link rel="apple-touch-icon" href="/assets/img/favicon-3f9a1c2b-180.png">"#
+        );
+        STATE.with(|s| {
+            let s = s.borrow();
+            assert!(
+                s.icon_pngs
+                    .iter()
+                    .any(|(f, n)| f.path == SVG.path && *n == 180)
+            );
+        });
+        assert_eq!(
+            apple_touch_icon(&PNG).into_string(),
+            r#"<link rel="apple-touch-icon" href="/assets/img/favicon-3f9a1c2b.png">"#
         );
     }
 }
