@@ -47,7 +47,7 @@ mod lint {
             kind: "k",
             title: "t",
             text: "x",
-            href: "/",
+            href: Some("/"),
         }]);
         let _ = terms(&[Term {
             title: "t",

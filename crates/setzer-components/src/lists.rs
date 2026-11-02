@@ -5,17 +5,34 @@ pub struct Card<'a> {
     pub kind: &'a str,
     pub title: &'a str,
     pub text: &'a str,
-    pub href: &'a str,
+    /// Where the card leads; `None` for a card without a link (e.g. a site
+    /// that is not online yet).
+    pub href: Option<&'a str>,
 }
 
-/// Grid of linked cards: 3 columns, 2 on narrow screens, 1 on phones.
+/// Grid of cards: 3 columns, 2 on narrow screens, 1 on phones.
 pub fn cards(items: &[Card]) -> Html {
     let card = |c: &Card| {
+        let look = style([
+            flex(),
+            flex_col(),
+            gap(Space::Xs),
+            bg(Color::Surface),
+            border(Stroke::Hairline, Color::Rule),
+            radius(Radius::M),
+            pad(Space::M),
+            fg(Color::Fg),
+        ]);
+        let body = html! {
+            span class=(style([text(TextRole::Overline), fg(Color::AccentFg)])) { (c.kind) }
+            strong class=(style([text(TextRole::H3)])) { (c.title) }
+            span class=(style([fg(Color::Muted)])) { (c.text) }
+        };
         html! {
-            a href=(c.href) class=(style([flex(), flex_col(), gap(Space::Xs), bg(Color::Surface), border(Stroke::Hairline, Color::Rule), radius(Radius::M), pad(Space::M), fg(Color::Fg), hover(border_color(Color::Accent)), hover(no_underline())])) {
-                span class=(style([text(TextRole::Overline), fg(Color::AccentFg)])) { (c.kind) }
-                strong class=(style([text(TextRole::H3)])) { (c.title) }
-                span class=(style([fg(Color::Muted)])) { (c.text) }
+            @if let Some(href) = c.href {
+                a href=(href) class=(look.with(style([hover(border_color(Color::Accent)), hover(no_underline())]))) { (body) }
+            } @else {
+                div class=(look) { (body) }
             }
         }
     };
@@ -192,5 +209,19 @@ mod tests {
             text: "t",
         }]);
         assert!(m.into_string().contains("&lt;b&gt;"));
+    }
+
+    #[test]
+    fn card_without_href_is_no_link() {
+        let card = |href| Card {
+            kind: "App",
+            title: "RingIo",
+            text: "Soon.",
+            href,
+        };
+        let linked = cards(&[card(Some("https://ringio.app"))]).into_string();
+        assert!(linked.contains(r#"<a href="https://ringio.app""#));
+        let plain = cards(&[card(None)]).into_string();
+        assert!(!plain.contains("<a ") && plain.contains("RingIo"));
     }
 }
